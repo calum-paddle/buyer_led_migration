@@ -2,6 +2,20 @@
 
 A modern web application for importing customers in bulk to Paddle using their API. Features a beautiful React frontend and a Flask backend that processes CSV files and creates customers, addresses, and businesses via the Paddle API.
 
+## Quick Start
+
+**Setup:**
+```bash
+./setup.sh
+```
+
+**Run:**
+```bash
+./start.sh
+```
+
+The application will be available at `http://localhost:3000` (frontend) and `http://localhost:5001` (backend API).
+
 ## Features
 
 - 🎨 React frontend with drag-and-drop file upload
