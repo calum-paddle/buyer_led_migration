@@ -6,6 +6,7 @@ import os
 from werkzeug.utils import secure_filename
 import tempfile
 import re
+from datetime import datetime, timezone
 
 app = Flask(__name__)
 CORS(app)
@@ -152,6 +153,56 @@ def import_customers():
                     error_msg_full = f"Row {index + 1} ({customer_email}): subscription_price_id is required"
                     print(f"❌ Validation failed: {error_msg_full}")
                     validation_errors.append(error_msg_full)
+                
+                # Validate date fields format and values
+                current_datetime = datetime.now(timezone.utc)
+                
+                # Date format pattern: YYYY-MM-DDTHH:MM:SSZ (e.g., 2025-06-30T15:32:00Z)
+                date_format_pattern = r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$'
+                
+                # Validate current_period_started_at format and value
+                period_started_str = clean_value(row.get('current_period_started_at'))
+                if period_started_str:
+                    # First check format
+                    if not re.match(date_format_pattern, period_started_str):
+                        error_msg_full = f"Row {index + 1} ({customer_email}): current_period_started_at must be in format YYYY-MM-DDTHH:MM:SSZ (e.g., 2025-06-30T15:32:00Z), got: {period_started_str}"
+                        print(f"❌ Validation failed: {error_msg_full}")
+                        validation_errors.append(error_msg_full)
+                    else:
+                        # Format is correct, now check if it's before current date/time
+                        try:
+                            period_started_str_parsed = period_started_str.replace('Z', '+00:00')
+                            period_started = datetime.fromisoformat(period_started_str_parsed)
+                            if period_started >= current_datetime:
+                                error_msg_full = f"Row {index + 1} ({customer_email}): current_period_started_at must be before current date/time, got: {period_started_str}"
+                                print(f"❌ Validation failed: {error_msg_full}")
+                                validation_errors.append(error_msg_full)
+                        except (ValueError, AttributeError) as e:
+                            error_msg_full = f"Row {index + 1} ({customer_email}): current_period_started_at has invalid date value, got: {period_started_str}"
+                            print(f"❌ Validation failed: {error_msg_full}")
+                            validation_errors.append(error_msg_full)
+                
+                # Validate current_period_ends_at format and value
+                period_ends_str = clean_value(row.get('current_period_ends_at'))
+                if period_ends_str:
+                    # First check format
+                    if not re.match(date_format_pattern, period_ends_str):
+                        error_msg_full = f"Row {index + 1} ({customer_email}): current_period_ends_at must be in format YYYY-MM-DDTHH:MM:SSZ (e.g., 2025-06-30T15:32:00Z), got: {period_ends_str}"
+                        print(f"❌ Validation failed: {error_msg_full}")
+                        validation_errors.append(error_msg_full)
+                    else:
+                        # Format is correct, now check if it's after current date/time
+                        try:
+                            period_ends_str_parsed = period_ends_str.replace('Z', '+00:00')
+                            period_ends = datetime.fromisoformat(period_ends_str_parsed)
+                            if period_ends <= current_datetime:
+                                error_msg_full = f"Row {index + 1} ({customer_email}): current_period_ends_at must be after current date/time, got: {period_ends_str}"
+                                print(f"❌ Validation failed: {error_msg_full}")
+                                validation_errors.append(error_msg_full)
+                        except (ValueError, AttributeError) as e:
+                            error_msg_full = f"Row {index + 1} ({customer_email}): current_period_ends_at has invalid date value, got: {period_ends_str}"
+                            print(f"❌ Validation failed: {error_msg_full}")
+                            validation_errors.append(error_msg_full)
             
             # If ANY validation errors exist, stop immediately and return errors (no API calls)
             if validation_errors:
