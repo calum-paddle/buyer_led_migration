@@ -5,9 +5,13 @@ import requests
 import os
 from werkzeug.utils import secure_filename
 import tempfile
+import re
 
 app = Flask(__name__)
 CORS(app)
+
+# Countries that require postal codes
+COUNTRIES_REQUIRING_POSTAL_CODE = ['AU', 'CA', 'FR', 'DE', 'IN', 'IT', 'NL', 'ES', 'UK', 'US']
 
 # Helper function to replace NaN with None and convert everything to string
 def clean_value(val):
@@ -17,6 +21,34 @@ def clean_value(val):
         if val != val or val in [float('inf'), float('-inf')]:
             return None
     return str(val).strip()
+
+# Validate postal code format based on country
+def validate_postal_code(country_code, postal_code):
+    """
+    Validates postal code format based on country code.
+    Returns (is_valid, error_message)
+    """
+    if not postal_code:
+        return False, f"Postal code is required for country {country_code}"
+    
+    postal_code = postal_code.strip()
+    
+    if country_code == 'US':
+        # US: must be exactly 5 numerical digits
+        if not re.match(r'^\d{5}$', postal_code):
+            return False, f"US postal code must be exactly 5 numerical digits (e.g., 12345), got: {postal_code}"
+        return True, None
+    
+    elif country_code == 'CA':
+        # Canada: must be in form A1A1A1 or A1A 1A1 (alternating letter-number, space optional)
+        # Remove space for validation, then check format
+        postal_code_no_space = postal_code.replace(' ', '')
+        if not re.match(r'^[A-Za-z]\d[A-Za-z]\d[A-Za-z]\d$', postal_code_no_space):
+            return False, f"Canadian postal code must be in format A1A1A1 or A1A 1A1 (e.g., K1A0B1 or K1A 0B1), got: {postal_code}"
+        return True, None
+    
+    # For other countries, just check that postal code exists (format validation can be added later)
+    return True, None
 
 @app.route('/api/import', methods=['POST'])
 def import_customers():
@@ -75,15 +107,57 @@ def import_customers():
                 'successful': 0,
                 'failed': 0,
                 'errors': [],
+                'validation_errors': [],
                 'successful_transactions': [],
                 'failed_transactions': []
             }
             
-            # Process each row
+            # PHASE 1: Validate ALL rows first (before any API calls)
+            print(f"🔍 Phase 1: Validating all {len(data)} records...")
+            validation_errors = []
+            for index, row in data.iterrows():
+                customer_email = clean_value(row.get('customer_email'))
+                
+                # Validate address_country_code is required
+                country_code = clean_value(row.get('address_country_code'))
+                if not country_code:
+                    error_msg_full = f"Row {index + 1} ({customer_email}): address_country_code is required"
+                    print(f"❌ Validation failed: {error_msg_full}")
+                    validation_errors.append(error_msg_full)
+                    continue
+                
+                # Validate address_postal_code is required for specific countries
+                country_code_upper = country_code.upper()
+                if country_code_upper in COUNTRIES_REQUIRING_POSTAL_CODE:
+                    postal_code = clean_value(row.get('address_postal_code'))
+                    is_valid, error_msg = validate_postal_code(country_code_upper, postal_code)
+                    if not is_valid:
+                        error_msg_full = f"Row {index + 1} ({customer_email}): {error_msg}"
+                        print(f"❌ Validation failed: {error_msg_full}")
+                        validation_errors.append(error_msg_full)
+                
+                # Validate subscription_price_id is required
+                subscription_price_id = clean_value(row.get('subscription_price_id'))
+                if not subscription_price_id:
+                    error_msg_full = f"Row {index + 1} ({customer_email}): subscription_price_id is required"
+                    print(f"❌ Validation failed: {error_msg_full}")
+                    validation_errors.append(error_msg_full)
+            
+            # If ANY validation errors exist, stop immediately and return errors (no API calls)
+            if validation_errors:
+                print(f"🛑 Validation failed for {len(validation_errors)} row(s). Stopping all processing.")
+                results['validation_errors'] = validation_errors
+                results['errors'] = validation_errors
+                results['failed'] = len(validation_errors)
+                return jsonify(results)
+            
+            # PHASE 2: All validations passed, proceed with API calls
+            print(f"✅ All validations passed! Starting API calls for {len(data)} records...")
             print(f"🔄 Starting to process {len(data)} records...")
             for index, row in data.iterrows():
                 try:
                     print(f"👤 Processing row {index + 1}/{len(data)}: {clean_value(row['customer_email'])}")
+                    
                     # 1. Create customer
                     customer_payload = {
                         "email": clean_value(row['customer_email']),
@@ -212,12 +286,11 @@ def import_customers():
                                 "ends_at": clean_value(row['current_period_ends_at'])
                             }
 
-                        # Add custom_data with subscription_price_id if provided
+                        # Add custom_data with subscription_price_id (required)
                         subscription_price_id = clean_value(row.get('subscription_price_id'))
-                        if subscription_price_id:
-                            transaction_payload["custom_data"] = {
-                                "subscription_price_id": subscription_price_id
-                            }
+                        transaction_payload["custom_data"] = {
+                            "subscription_price_id": subscription_price_id
+                        }
 
                         print(f"💳 Creating transaction for customer {customer_id}")
                         print(f"📦 Transaction payload: {transaction_payload}")

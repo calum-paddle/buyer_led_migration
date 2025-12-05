@@ -44,8 +44,8 @@ cleanup() {
 trap cleanup SIGINT SIGTERM
 
 # Start backend server
-echo -e "${BLUE}🔧 Starting Flask backend server on http://localhost:5000...${NC}"
-python app.py &
+echo -e "${BLUE}🔧 Starting Flask backend server on http://localhost:5001...${NC}"
+venv/bin/python3 app.py &
 BACKEND_PID=$!
 
 # Wait a moment for backend to start
@@ -58,7 +58,7 @@ FRONTEND_PID=$!
 
 echo -e "${GREEN}✅ Both servers are starting up!${NC}"
 echo -e "${GREEN}📱 Frontend will be available at: http://localhost:3000${NC}"
-echo -e "${GREEN}🔧 Backend API will be available at: http://localhost:5000${NC}"
+echo -e "${GREEN}🔧 Backend API will be available at: http://localhost:5001${NC}"
 echo -e "${GREEN}⏹️  Press Ctrl+C to stop both servers${NC}"
 
 # Wait for both processes

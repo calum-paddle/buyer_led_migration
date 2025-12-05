@@ -16,7 +16,7 @@ body {
 }
 
 .container {
-  max-width: 600px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
   display: flex;
@@ -40,7 +40,7 @@ body {
   border-radius: 12px;
   padding: 2rem;
   width: 100%;
-  max-width: 500px;
+  max-width: 1000px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
@@ -276,7 +276,7 @@ body {
 
 .logs {
   margin-top: 1rem;
-  max-height: 200px;
+  max-height: 500px;
   overflow-y: auto;
   background: #1a1a1a;
   border-radius: 8px;
@@ -325,6 +325,8 @@ body {
   padding: 1.5rem;
   margin-top: 1rem;
   border: 1px solid #444;
+  width: 100%;
+  max-width: 1000px;
 }
 
 .csv-requirements h3 {

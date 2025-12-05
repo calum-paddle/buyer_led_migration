@@ -128,21 +128,43 @@ Your CSV file should include the following columns:
 
 - `customer_email` - Customer's email address
 - `customer_full_name` - Customer's full name
+- `address_country_code` - Country code (e.g., US, GB)
+- `address_postal_code` - Required for certain countries (see below), optional for others
+- `current_period_started_at` - Subscription period start (format: 2024-06-31T15:32:00Z)
+- `current_period_ends_at` - Subscription period end (format: 2024-06-31T15:32:00Z)
+- `zero_dollar_sub_price_id` - Paddle price ID for the $0 subscription (format: pri_xxxxxxxxxx)
+- `subscription_price_id` - Subscription price ID to be stored in transaction custom_data (format: pri_xxxxxxxxxx)
 
 ### Optional Columns
 
 - `customer_external_id` - External customer ID
-- `address_country_code` - Country code (e.g., US, GB)
 - `address_street_line1` - Street address line 1
 - `address_street_line2` - Street address line 2
 - `address_city` - City
 - `address_region` - State/Region
-- `address_postal_code` - Postal code
 - `address_external_id` - External address ID
 - `business_name` - Business name
 - `business_company_number` - Company number
 - `business_tax_identifier` - Tax identifier (e.g., GB123456789)
 - `business_external_id` - External business ID
+
+### Postal Code Requirements
+
+Postal codes are **required** for the following countries:
+- **AU** (Australia)
+- **CA** (Canada) - Format: A1A1A1 or A1A 1A1 (e.g., K1A0B1)
+- **FR** (France)
+- **DE** (Germany)
+- **IN** (India)
+- **IT** (Italy)
+- **NL** (Netherlands)
+- **ES** (Spain)
+- **UK** (United Kingdom)
+- **US** (United States) - Format: Exactly 5 numerical digits (e.g., 12345)
+
+For all other countries, postal codes are optional.
+
+**Note**: The list of countries requiring postal codes can be customized. The array is located in `app.py` at **line 14** (`COUNTRIES_REQUIRING_POSTAL_CODE`). To add or remove countries, edit this array.
 
 ## Example CSV
 

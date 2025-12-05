@@ -86,17 +86,30 @@ function App() {
       setProgress(10);
 
       console.log('🚀 Sending request to backend...');
-      const response = await fetch('http://localhost:5001/api/import', {
-        method: 'POST',
-        body: formData,
-      });
+      let response;
+      try {
+        response = await fetch('http://localhost:5001/api/import', {
+          method: 'POST',
+          body: formData,
+        });
+      } catch (fetchError) {
+        addLog('error', '❌ Failed to connect to backend server');
+        addLog('error', 'Please make sure the Flask backend is running on http://localhost:5001');
+        addLog('info', 'You can start it by running: python app.py');
+        throw new Error('Backend server is not reachable. Please ensure the Flask server is running on port 5001.');
+      }
       
       console.log('📥 Response received:', response.status, response.statusText);
 
       setProgress(50);
 
       if (!response.ok) {
-        const errorData = await response.json();
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (jsonError) {
+          throw new Error(`Server returned error status ${response.status}: ${response.statusText}`);
+        }
         throw new Error(errorData.error || 'Failed to import customers');
       }
 
@@ -110,6 +123,15 @@ function App() {
         addLog('error', `❌ Failed: ${result.failed} customers`);
       }
 
+      // Display validation errors prominently if any
+      if (result.validation_errors && result.validation_errors.length > 0) {
+        addLog('error', `⚠️ Validation Errors Found: ${result.validation_errors.length} row(s) failed validation`);
+        addLog('info', 'Validation error details:');
+        result.validation_errors.forEach((error: string) => {
+          addLog('error', error);
+        });
+      }
+
       // Log transaction results
       if (result.successful_transactions && result.successful_transactions.length > 0) {
         addLog('success', `💳 Successful transactions: ${result.successful_transactions.length}`);
@@ -119,13 +141,17 @@ function App() {
         addLog('error', `❌ Failed transactions: ${result.failed_transactions.length}`);
       }
 
-      if (result.errors && result.errors.length > 0) {
-        addLog('info', 'Error details:');
-        result.errors.slice(0, 5).forEach((error: string) => {
+      // Display other errors (non-validation)
+      const otherErrors = result.errors?.filter((error: string) => 
+        !result.validation_errors?.includes(error)
+      ) || [];
+      if (otherErrors.length > 0) {
+        addLog('info', 'Other error details:');
+        otherErrors.slice(0, 5).forEach((error: string) => {
           addLog('error', error);
         });
-        if (result.errors.length > 5) {
-          addLog('info', `... and ${result.errors.length - 5} more errors`);
+        if (otherErrors.length > 5) {
+          addLog('info', `... and ${otherErrors.length - 5} more errors`);
         }
       }
 
@@ -396,7 +422,7 @@ function App() {
           </div>
         )}
 
-        {importResults && (
+        {importResults && !importResults.validation_errors?.length && (
           <div className="download-section">
             <h3>Download Results</h3>
             <div className="download-buttons">
@@ -433,12 +459,12 @@ function App() {
           <li><strong>customer_email</strong> - Required: Customer's email address</li>
           <li><strong>customer_full_name</strong> - Required: Customer's full name</li>
           <li><strong>customer_external_id</strong> - Optional: External customer ID</li>
-          <li><strong>address_country_code</strong> - Optional: Country code (e.g., US, GB)</li>
+          <li><strong>address_country_code</strong> - Required: Country code (e.g., US, GB)</li>
           <li><strong>address_street_line1</strong> - Optional: Street address line 1</li>
           <li><strong>address_street_line2</strong> - Optional: Street address line 2</li>
           <li><strong>address_city</strong> - Optional: City</li>
           <li><strong>address_region</strong> - Optional: State/Region</li>
-          <li><strong>address_postal_code</strong> - Optional: Postal code</li>
+          <li><strong>address_postal_code</strong> - Required for: AU, CA, FR, DE, IN, IT, NL, ES, UK, US. Optional for other countries. US format: 5 digits (e.g., 12345). Canada format: A1A1A1 or A1A 1A1 (e.g., K1A0B1)</li>
           <li><strong>address_external_id</strong> - Optional: External address ID</li>
           <li><strong>business_name</strong> - Optional: Business name</li>
           <li><strong>business_company_number</strong> - Optional: Company number</li>
@@ -447,6 +473,7 @@ function App() {
           <li><strong>current_period_started_at</strong> - Required: Subscription period start (format: 2024-06-31T15:32:00Z)</li>
           <li><strong>current_period_ends_at</strong> - Required: Subscription period end (format: 2024-06-31T15:32:00Z)</li>
           <li><strong>zero_dollar_sub_price_id</strong> - Required: Paddle price ID for the $0 subscription (format: pri_xxxxxxxxxx)</li>
+          <li><strong>subscription_price_id</strong> - Required: Subscription price ID to be stored in transaction custom_data (format: pri_xxxxxxxxxx)</li>
         </ul>
       </div>
     </div>
