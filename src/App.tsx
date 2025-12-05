@@ -162,7 +162,8 @@ function App() {
       'business_external_id',
       'current_period_started_at',
       'current_period_ends_at',
-      'zero_dollar_sub_price_id' // NEW required column
+      'zero_dollar_sub_price_id', // NEW required column
+      'subscription_price_id'
     ];
     
     const exampleData = [
@@ -182,7 +183,8 @@ function App() {
       'BIZ001',
       '2024-06-31T15:32:00Z',
       '2024-07-31T15:32:00Z',
-      'pri_1234567890' // Example price ID
+      'pri_1234567890', // Example price ID
+      'pri_0987654321' // Example price ID
     ];
     
     const csvContent = [
@@ -253,7 +255,7 @@ function App() {
       <div className="logo">paddle</div>
       
       <div className="card">
-        <h1 className="title">Bulk Customer Importer</h1>
+        <h1 className="title">Buyer Led Migration Tool</h1>
         <p className="subtitle">
           Upload your CSV file and enter your Paddle API key to import customers in bulk
         </p>

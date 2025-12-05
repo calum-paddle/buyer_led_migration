@@ -212,6 +212,13 @@ def import_customers():
                                 "ends_at": clean_value(row['current_period_ends_at'])
                             }
 
+                        # Add custom_data with subscription_price_id if provided
+                        subscription_price_id = clean_value(row.get('subscription_price_id'))
+                        if subscription_price_id:
+                            transaction_payload["custom_data"] = {
+                                "subscription_price_id": subscription_price_id
+                            }
+
                         print(f"💳 Creating transaction for customer {customer_id}")
                         print(f"📦 Transaction payload: {transaction_payload}")
                         response = requests.post(f"{API_URL}/transactions", headers=HEADERS, json=transaction_payload)
