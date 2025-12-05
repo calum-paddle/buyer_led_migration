@@ -11,7 +11,10 @@ app = Flask(__name__)
 CORS(app)
 
 # Countries that require postal codes
-COUNTRIES_REQUIRING_POSTAL_CODE = ['AU', 'CA', 'FR', 'DE', 'IN', 'IT', 'NL', 'ES', 'UK', 'US']
+COUNTRIES_REQUIRING_POSTAL_CODE = ['AU', 'CA', 'FR', 'DE', 'IN', 'IT', 'NL', 'ES', 'GB', 'US']
+
+# Unsupported countries
+UNSUPPORTED_COUNTRIES = ['AF', 'AQ', 'BY', 'MM', 'CF', 'CU', 'CD', 'HT', 'IR', 'LY', 'ML', 'AN', 'NI', 'KP', 'RU', 'SO', 'SS', 'SD', 'SY', 'VE', 'YE', 'ZW']
 
 # Helper function to replace NaN with None and convert everything to string
 def clean_value(val):
@@ -126,8 +129,15 @@ def import_customers():
                     validation_errors.append(error_msg_full)
                     continue
                 
-                # Validate address_postal_code is required for specific countries
+                # Validate country is not unsupported
                 country_code_upper = country_code.upper()
+                if country_code_upper in UNSUPPORTED_COUNTRIES:
+                    error_msg_full = f"Row {index + 1} ({customer_email}): Country {country_code_upper} is not supported"
+                    print(f"❌ Validation failed: {error_msg_full}")
+                    validation_errors.append(error_msg_full)
+                    continue
+                
+                # Validate address_postal_code is required for specific countries
                 if country_code_upper in COUNTRIES_REQUIRING_POSTAL_CODE:
                     postal_code = clean_value(row.get('address_postal_code'))
                     is_valid, error_msg = validate_postal_code(country_code_upper, postal_code)

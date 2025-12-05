@@ -159,12 +159,42 @@ Postal codes are **required** for the following countries:
 - **IT** (Italy)
 - **NL** (Netherlands)
 - **ES** (Spain)
-- **UK** (United Kingdom)
+- **GB** (United Kingdom)
 - **US** (United States) - Format: Exactly 5 numerical digits (e.g., 12345)
 
 For all other countries, postal codes are optional.
 
 **Note**: The list of countries requiring postal codes can be customized. The array is located in `app.py` at **line 14** (`COUNTRIES_REQUIRING_POSTAL_CODE`). To add or remove countries, edit this array.
+
+### Unsupported Countries
+
+The following countries are **not supported** and will cause validation to fail:
+- **AF** (Afghanistan)
+- **AQ** (Antarctica)
+- **BY** (Belarus)
+- **MM** (Myanmar)
+- **CF** (Central African Republic)
+- **CU** (Cuba)
+- **CD** (Democratic Republic of the Congo)
+- **HT** (Haiti)
+- **IR** (Iran)
+- **LY** (Libya)
+- **ML** (Mali)
+- **AN** (Netherlands Antilles)
+- **NI** (Nicaragua)
+- **KP** (North Korea)
+- **RU** (Russia)
+- **SO** (Somalia)
+- **SS** (South Sudan)
+- **SD** (Sudan)
+- **SY** (Syria)
+- **VE** (Venezuela)
+- **YE** (Yemen)
+- **ZW** (Zimbabwe)
+
+If any records contain an unsupported country code, validation will fail and no API calls will be made.
+
+**Note**: The list of unsupported countries can be customized. The array is located in `app.py` at **line 17** (`UNSUPPORTED_COUNTRIES`). To add or remove countries, edit this array.
 
 ## Example CSV
 

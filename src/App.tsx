@@ -464,7 +464,7 @@ function App() {
           <li><strong>address_street_line2</strong> - Optional: Street address line 2</li>
           <li><strong>address_city</strong> - Optional: City</li>
           <li><strong>address_region</strong> - Optional: State/Region</li>
-          <li><strong>address_postal_code</strong> - Required for: AU, CA, FR, DE, IN, IT, NL, ES, UK, US. Optional for other countries. US format: 5 digits (e.g., 12345). Canada format: A1A1A1 or A1A 1A1 (e.g., K1A0B1)</li>
+          <li><strong>address_postal_code</strong> - Required for: AU, CA, FR, DE, IN, IT, NL, ES, GB, US. Optional for other countries. US format: 5 digits (e.g., 12345). Canada format: A1A1A1 or A1A 1A1 (e.g., K1A0B1)</li>
           <li><strong>address_external_id</strong> - Optional: External address ID</li>
           <li><strong>business_name</strong> - Optional: Business name</li>
           <li><strong>business_company_number</strong> - Optional: Company number</li>
