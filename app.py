@@ -11,6 +11,9 @@ from datetime import datetime, timezone
 app = Flask(__name__)
 CORS(app)
 
+# Set maximum file upload size to 2GB to handle large CSV files (up to 1 million+ rows)
+app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024 * 1024  # 2GB in bytes
+
 # Countries that require postal codes
 COUNTRIES_REQUIRING_POSTAL_CODE = ['AU', 'CA', 'FR', 'DE', 'IN', 'IT', 'NL', 'ES', 'GB', 'US']
 

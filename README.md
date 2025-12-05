@@ -4,15 +4,13 @@ A modern web application for importing customers in bulk to Paddle using their A
 
 ## Features
 
-- 🎨 Modern, responsive React frontend with drag-and-drop file upload
+- 🎨 React frontend with drag-and-drop file upload
 - 🔐 Secure API key input with show/hide toggle
 - 🌐 Sandbox/Production environment toggle (defaults to production)
 - 📊 Real-time progress tracking and detailed logging
 - 🏢 Support for customers, addresses, and businesses
 - ✅ Comprehensive error handling and reporting
-- 📱 Mobile-friendly design
 - 📥 CSV template download with example data
-- 🔍 Detailed debugging logs for troubleshooting
 
 ## Prerequisites
 
@@ -130,8 +128,8 @@ Your CSV file should include the following columns:
 - `customer_full_name` - Customer's full name
 - `address_country_code` - Country code (e.g., US, GB)
 - `address_postal_code` - Required for certain countries (see below), optional for others
-- `current_period_started_at` - Subscription period start (format: 2024-06-31T15:32:00Z)
-- `current_period_ends_at` - Subscription period end (format: 2024-06-31T15:32:00Z)
+- `current_period_started_at` - Subscription period start (format: YYYY-MM-DDTHH:MM:SSZ, e.g., 2024-06-30T15:32:00Z). Must be before current date/time.
+- `current_period_ends_at` - Subscription period end (format: YYYY-MM-DDTHH:MM:SSZ, e.g., 2024-07-31T15:32:00Z). Must be after current date/time.
 - `zero_dollar_sub_price_id` - Paddle price ID for the $0 subscription (format: pri_xxxxxxxxxx)
 - `subscription_price_id` - Subscription price ID to be stored in transaction custom_data (format: pri_xxxxxxxxxx)
 
@@ -195,6 +193,23 @@ The following countries are **not supported** and will cause validation to fail:
 If any records contain an unsupported country code, validation will fail and no API calls will be made.
 
 **Note**: The list of unsupported countries can be customized. The array is located in `app.py` at **line 17** (`UNSUPPORTED_COUNTRIES`). To add or remove countries, edit this array.
+
+### Date Validation
+
+The following validation rules apply to date fields:
+
+- **Format**: Dates must be in ISO 8601 format: `YYYY-MM-DDTHH:MM:SSZ` (e.g., `2024-06-30T15:32:00Z`)
+  - Year: 4 digits
+  - Month: 2 digits (01-12)
+  - Day: 2 digits (01-31, must be valid for the month)
+  - Time: `HH:MM:SS` in 24-hour format
+  - Timezone: Must end with `Z` (UTC)
+
+- **`current_period_started_at`**: Must be before the current date/time (in the past)
+
+- **`current_period_ends_at`**: Must be after the current date/time (in the future)
+
+If any date validation fails, processing will stop and no API calls will be made.
 
 ## Example CSV
 
