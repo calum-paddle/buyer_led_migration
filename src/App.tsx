@@ -457,7 +457,7 @@ function App() {
         </p>
         <ul>
           <li><strong>customer_email</strong> - Required: Customer's email address</li>
-          <li><strong>customer_full_name</strong> - Required: Customer's full name</li>
+          <li><strong>customer_full_name</strong> - Optional: Customer's full name</li>
           <li><strong>customer_external_id</strong> - Optional: External customer ID</li>
           <li><strong>address_country_code</strong> - Required: Country code (e.g., US, GB)</li>
           <li><strong>address_street_line1</strong> - Optional: Street address line 1</li>
