@@ -124,6 +124,12 @@ def import_customers():
             validation_errors = []
             for index, row in data.iterrows():
                 customer_email = clean_value(row.get('customer_email'))
+
+                # Validate customer_email is required
+                if not customer_email:
+                    error_msg_full = f"Row {index + 1}: customer_email is required"
+                    print(f"❌ Validation failed: {error_msg_full}")
+                    validation_errors.append(error_msg_full)
                 
                 # Validate address_country_code is required
                 country_code = clean_value(row.get('address_country_code'))
@@ -131,24 +137,21 @@ def import_customers():
                     error_msg_full = f"Row {index + 1} ({customer_email}): address_country_code is required"
                     print(f"❌ Validation failed: {error_msg_full}")
                     validation_errors.append(error_msg_full)
-                    continue
-                
-                # Validate country is not unsupported
-                country_code_upper = country_code.upper()
-                if country_code_upper in UNSUPPORTED_COUNTRIES:
-                    error_msg_full = f"Row {index + 1} ({customer_email}): Country {country_code_upper} is not supported"
-                    print(f"❌ Validation failed: {error_msg_full}")
-                    validation_errors.append(error_msg_full)
-                    continue
-                
-                # Validate address_postal_code is required for specific countries
-                if country_code_upper in COUNTRIES_REQUIRING_POSTAL_CODE:
-                    postal_code = clean_value(row.get('address_postal_code'))
-                    is_valid, error_msg = validate_postal_code(country_code_upper, postal_code)
-                    if not is_valid:
-                        error_msg_full = f"Row {index + 1} ({customer_email}): {error_msg}"
+                else:
+                    # Validate country is not unsupported
+                    country_code_upper = country_code.upper()
+                    if country_code_upper in UNSUPPORTED_COUNTRIES:
+                        error_msg_full = f"Row {index + 1} ({customer_email}): Country {country_code_upper} is not supported"
                         print(f"❌ Validation failed: {error_msg_full}")
                         validation_errors.append(error_msg_full)
+                    # Validate address_postal_code is required for specific countries
+                    elif country_code_upper in COUNTRIES_REQUIRING_POSTAL_CODE:
+                        postal_code = clean_value(row.get('address_postal_code'))
+                        is_valid, error_msg = validate_postal_code(country_code_upper, postal_code)
+                        if not is_valid:
+                            error_msg_full = f"Row {index + 1} ({customer_email}): {error_msg}"
+                            print(f"❌ Validation failed: {error_msg_full}")
+                            validation_errors.append(error_msg_full)
                 
                 # Validate subscription_price_id is required
                 subscription_price_id = clean_value(row.get('subscription_price_id'))
@@ -156,56 +159,67 @@ def import_customers():
                     error_msg_full = f"Row {index + 1} ({customer_email}): subscription_price_id is required"
                     print(f"❌ Validation failed: {error_msg_full}")
                     validation_errors.append(error_msg_full)
+
+                # Validate zero_dollar_sub_price_id is required
+                zero_dollar_sub_price_id = clean_value(row.get('zero_dollar_sub_price_id'))
+                if not zero_dollar_sub_price_id:
+                    error_msg_full = f"Row {index + 1} ({customer_email}): zero_dollar_sub_price_id is required"
+                    print(f"❌ Validation failed: {error_msg_full}")
+                    validation_errors.append(error_msg_full)
                 
-                # Validate date fields format and values
+                # Validate date fields presence, format, and values
                 current_datetime = datetime.now(timezone.utc)
                 
                 # Date format pattern: YYYY-MM-DDTHH:MM:SSZ (e.g., 2025-06-30T15:32:00Z)
                 date_format_pattern = r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$'
                 
-                # Validate current_period_started_at format and value
+                # Validate current_period_started_at is required, then format and value
                 period_started_str = clean_value(row.get('current_period_started_at'))
-                if period_started_str:
-                    # First check format
-                    if not re.match(date_format_pattern, period_started_str):
-                        error_msg_full = f"Row {index + 1} ({customer_email}): current_period_started_at must be in format YYYY-MM-DDTHH:MM:SSZ (e.g., 2025-06-30T15:32:00Z), got: {period_started_str}"
-                        print(f"❌ Validation failed: {error_msg_full}")
-                        validation_errors.append(error_msg_full)
-                    else:
-                        # Format is correct, now check if it's before current date/time
-                        try:
-                            period_started_str_parsed = period_started_str.replace('Z', '+00:00')
-                            period_started = datetime.fromisoformat(period_started_str_parsed)
-                            if period_started >= current_datetime:
-                                error_msg_full = f"Row {index + 1} ({customer_email}): current_period_started_at must be before current date/time, got: {period_started_str}"
-                                print(f"❌ Validation failed: {error_msg_full}")
-                                validation_errors.append(error_msg_full)
-                        except (ValueError, AttributeError) as e:
-                            error_msg_full = f"Row {index + 1} ({customer_email}): current_period_started_at has invalid date value, got: {period_started_str}"
+                if not period_started_str:
+                    error_msg_full = f"Row {index + 1} ({customer_email}): current_period_started_at is required"
+                    print(f"❌ Validation failed: {error_msg_full}")
+                    validation_errors.append(error_msg_full)
+                elif not re.match(date_format_pattern, period_started_str):
+                    error_msg_full = f"Row {index + 1} ({customer_email}): current_period_started_at must be in format YYYY-MM-DDTHH:MM:SSZ (e.g., 2025-06-30T15:32:00Z), got: {period_started_str}"
+                    print(f"❌ Validation failed: {error_msg_full}")
+                    validation_errors.append(error_msg_full)
+                else:
+                    # Format is correct, now check if it's before current date/time
+                    try:
+                        period_started_str_parsed = period_started_str.replace('Z', '+00:00')
+                        period_started = datetime.fromisoformat(period_started_str_parsed)
+                        if period_started >= current_datetime:
+                            error_msg_full = f"Row {index + 1} ({customer_email}): current_period_started_at must be before current date/time, got: {period_started_str}"
                             print(f"❌ Validation failed: {error_msg_full}")
                             validation_errors.append(error_msg_full)
+                    except (ValueError, AttributeError) as e:
+                        error_msg_full = f"Row {index + 1} ({customer_email}): current_period_started_at has invalid date value, got: {period_started_str}"
+                        print(f"❌ Validation failed: {error_msg_full}")
+                        validation_errors.append(error_msg_full)
                 
-                # Validate current_period_ends_at format and value
+                # Validate current_period_ends_at is required, then format and value
                 period_ends_str = clean_value(row.get('current_period_ends_at'))
-                if period_ends_str:
-                    # First check format
-                    if not re.match(date_format_pattern, period_ends_str):
-                        error_msg_full = f"Row {index + 1} ({customer_email}): current_period_ends_at must be in format YYYY-MM-DDTHH:MM:SSZ (e.g., 2025-06-30T15:32:00Z), got: {period_ends_str}"
-                        print(f"❌ Validation failed: {error_msg_full}")
-                        validation_errors.append(error_msg_full)
-                    else:
-                        # Format is correct, now check if it's after current date/time
-                        try:
-                            period_ends_str_parsed = period_ends_str.replace('Z', '+00:00')
-                            period_ends = datetime.fromisoformat(period_ends_str_parsed)
-                            if period_ends <= current_datetime:
-                                error_msg_full = f"Row {index + 1} ({customer_email}): current_period_ends_at must be after current date/time, got: {period_ends_str}"
-                                print(f"❌ Validation failed: {error_msg_full}")
-                                validation_errors.append(error_msg_full)
-                        except (ValueError, AttributeError) as e:
-                            error_msg_full = f"Row {index + 1} ({customer_email}): current_period_ends_at has invalid date value, got: {period_ends_str}"
+                if not period_ends_str:
+                    error_msg_full = f"Row {index + 1} ({customer_email}): current_period_ends_at is required"
+                    print(f"❌ Validation failed: {error_msg_full}")
+                    validation_errors.append(error_msg_full)
+                elif not re.match(date_format_pattern, period_ends_str):
+                    error_msg_full = f"Row {index + 1} ({customer_email}): current_period_ends_at must be in format YYYY-MM-DDTHH:MM:SSZ (e.g., 2025-06-30T15:32:00Z), got: {period_ends_str}"
+                    print(f"❌ Validation failed: {error_msg_full}")
+                    validation_errors.append(error_msg_full)
+                else:
+                    # Format is correct, now check if it's after current date/time
+                    try:
+                        period_ends_str_parsed = period_ends_str.replace('Z', '+00:00')
+                        period_ends = datetime.fromisoformat(period_ends_str_parsed)
+                        if period_ends <= current_datetime:
+                            error_msg_full = f"Row {index + 1} ({customer_email}): current_period_ends_at must be after current date/time, got: {period_ends_str}"
                             print(f"❌ Validation failed: {error_msg_full}")
                             validation_errors.append(error_msg_full)
+                    except (ValueError, AttributeError) as e:
+                        error_msg_full = f"Row {index + 1} ({customer_email}): current_period_ends_at has invalid date value, got: {period_ends_str}"
+                        print(f"❌ Validation failed: {error_msg_full}")
+                        validation_errors.append(error_msg_full)
             
             # If ANY validation errors exist, stop immediately and return errors (no API calls)
             if validation_errors:
@@ -213,7 +227,8 @@ def import_customers():
                 results['validation_errors'] = validation_errors
                 results['errors'] = validation_errors
                 results['failed'] = len(validation_errors)
-                return jsonify(results)
+                results['error'] = f"Validation failed for {len(validation_errors)} row(s). No records were imported."
+                return jsonify(results), 400
             
             # PHASE 2: All validations passed, proceed with API calls
             print(f"✅ All validations passed! Starting API calls for {len(data)} records...")
